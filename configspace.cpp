@@ -11,6 +11,7 @@ using namespace cv;
 struct vertex
 {
   int state;
+  int orgstate;
   pair<int,int> parent;
   float f,g,h;
 };
@@ -57,10 +58,14 @@ int main(int argc,char** argv)
 
       Vec3b store=img.at<Vec3b>(i,j);
       if(store[0]==0 && store[1]==0 && store[2]==0)
+      {
       matrix[i][j].state=1;
+      matrix[i][j].orgstate=1;
+      }
       else if(store[0]==0 && store[1]>0 && store[2]==0)
       {
         matrix[i][j].state=4;
+        matrix[i][j].orgstate=4;
         if(i>idmax)idmax=i;
         if(i<idmin)idmin=i;
         if(j>jdmax)jdmax=j;
@@ -69,15 +74,22 @@ int main(int argc,char** argv)
       else if(store[0]==0 && store[1]==0 && store[2]>0)
       {
         matrix[i][j].state=0;
+        matrix[i][j].orgstate=0;
         if(i>ismax)ismax=i;
         if(i<ismin)ismin=i;
         if(j>jsmax)jsmax=j;
         if(j<jsmin)jsmin=j;
       }
       else if(store[0]>0 && store[1]>0 && store[2]>0)
+      {
       matrix[i][j].state=-1;
+      matrix[i][j].orgstate=-1;
+      }
       else
+      {
       matrix[i][j].state=1;
+      matrix[i][j].orgstate=1;
+      }
     }
    }
    src=make_pair((ismax+ismin)/2,(jsmax+jsmin)/2);
@@ -90,17 +102,8 @@ int main(int argc,char** argv)
    {
      for(int j=0;j<cols;j++)
      {
-       if(matrix[i][j].state==-1)
+       if(matrix[i][j].orgstate==-1)
        minkowski(i,j);
-     }
-   }
-
-   for(int i=0;i<rows;i++)
-   {
-     for(int j=0;j<cols;j++)
-     {
-       if(matrix[i][j].state==-2)
-        matrix[i][j].state=-1;
      }
    }
 
@@ -108,7 +111,7 @@ int main(int argc,char** argv)
 
    imshow("Final image",img);
    imshow("minkowski",imgt);
-//   imwrite("Task1_a.png",img);
+   imwrite("Task1_b.png",img);
    waitKey(0);
    destroyAllWindows();
   return 0;
@@ -245,14 +248,15 @@ void minkowski(int i,int j)
 {
 int imax=i+width;
 int jmax=j-breadth;
+int jtemp=j;
 
   for(;i<=imax;i++)
   {
-    for(;j>jmax;j--)
+    for(j=jtemp;j>jmax;j--)
     {
       if(isValid(make_pair(i,j)))
       {
-        matrix[i][j].state=-2;
+        matrix[i][j].state=-1;
         imgt.at<Vec3b>(i,j)[0]=255;
         imgt.at<Vec3b>(i,j)[1]=255;
         imgt.at<Vec3b>(i,j)[2]=255;
@@ -265,14 +269,15 @@ int jmax=j-breadth;
 
 void makebot(int i, int j)
 {
-  int imax=i+width;
+  int imax=i-width;
   int jmax=j+breadth;
-
+  int jtemp=j;
   Mat temp=imread("task.png",1);
 
-  for(;i<imax;i++)
+
+  for(;i>imax;i--)
   {
-    for(;j<jmax;j++)
+    for(j=jtemp;j<jmax;j++)
     {
       if(isValid(make_pair(i,j)))
       {
@@ -284,6 +289,6 @@ void makebot(int i, int j)
       continue;
     }
   }
-    waitKey(15);
+    waitKey(30);
   imshow("In Transition:",temp);
 }
