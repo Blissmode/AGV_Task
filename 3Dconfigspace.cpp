@@ -218,24 +218,66 @@ void AStarSearch()
 //    printf("Current node f  :(%d,%d)\n",i,j);
     closedList[i][j][k]=true;
 
-    sucessor(1,i-1,j-1,matrix[i][j].g,i,j);    //north-west
+    sucessor(2,i-1,j-1,k,matrix[i][j][k].g,i,j,k);    //north-west
     if(destreach==true) return;
-    sucessor(2,i-1,j,matrix[i][j].g,i,j);      //north
+    sucessor(3,i-1,j-1,k+1,matrix[i][j][k].g,i,j,k);    //north-west
     if(destreach==true) return;
-    sucessor(3,i-1,j+1,matrix[i][j].g,i,j);    //north-east
-    if(destreach==true) return;
-    sucessor(4,i,j+1,matrix[i][j].g,i,j);      //east
-    if(destreach==true) return;
-    sucessor(5,i+1,j+1,matrix[i][j].g,i,j);    //south-east
-    if(destreach==true) return;
-    sucessor(6,i+1,j,matrix[i][j].g,i,j);     //south
-    if(destreach==true) return;
-    sucessor(7,i+1,j-1,matrix[i][j].g,i,j);   //south-west
-    if(destreach==true) return;
-    sucessor(8,i,j-1,matrix[i][j].g,i,j);     //west
+    sucessor(3,i-1,j-1,k-1,matrix[i][j][k].g,i,j,k);    //north-west
     if(destreach==true) return;
 
+    sucessor(1,i-1,j,k,matrix[i][j][k].g,i,j,k);      //north
+    if(destreach==true) return
+    sucessor(2,i-1,j,k+1,matrix[i][j][k].g,i,j,k);      //north
+    if(destreach==true) return;
+    sucessor(2,i-1,j,k-1,matrix[i][j][k].g,i,j,k);      //north
+    if(destreach==true) return;
 
+    sucessor(2,i-1,j+1,k,matrix[i][j][k].g,i,j,k);    //north-east
+    if(destreach==true) return;
+    sucessor(3,i-1,j+1,k+1,matrix[i][j][k].g,i,j,k);    //north-east
+    if(destreach==true) return;
+    sucessor(3,i-1,j+1,k-1,matrix[i][j][k].g,i,j,k);    //north-east
+    if(destreach==true) return;
+
+    sucessor(1,i,j+1,k,matrix[i][j][k].g,i,j,k);      //east
+    if(destreach==true) return;
+    sucessor(2,i,j+1,k+1,matrix[i][j][k].g,i,j,k);      //east
+    if(destreach==true) return;
+    sucessor(2,i,j+1,k-1,matrix[i][j][k].g,i,j,k);      //east
+    if(destreach==true) return;
+
+    sucessor(2,i+1,j+1,k,matrix[i][j][k].g,i,j,k);    //south-east
+    if(destreach==true) return;
+    sucessor(3,i+1,j+1,k+1,matrix[i][j][k].g,i,j,k);    //south-east
+    if(destreach==true) return;
+    sucessor(3,i+1,j+1,k-1,matrix[i][j][k].g,i,j,k);    //south-east
+    if(destreach==true) return;
+
+    sucessor(1,i+1,j,k,matrix[i][j][k].g,i,j,k);     //south
+    if(destreach==true) return;
+    sucessor(2,i+1,j,k+1,matrix[i][j][k].g,i,j,k);     //south
+    if(destreach==true) return;
+    sucessor(2,i+1,j,k-1,matrix[i][j][k].g,i,j,k);     //south
+    if(destreach==true) return;
+
+    sucessor(2,i+1,j-1,k,matrix[i][j][k].g,i,j,k);   //south-west
+    if(destreach==true) return;
+    sucessor(3,i+1,j-1,k+1,matrix[i][j][k].g,i,j,k);   //south-west
+    if(destreach==true) return;
+    sucessor(3,i+1,j-1,k-1,matrix[i][j][k].g,i,j,k);   //south-west
+    if(destreach==true) return;
+
+    sucessor(1,i,j-1,k,matrix[i][j][k].g,i,j,k);     //west
+    if(destreach==true) return;
+    sucessor(2,i,j-1,k+1,matrix[i][j][k].g,i,j,k);     //west
+    if(destreach==true) return;
+    sucessor(2,i,j-1,k-1,matrix[i][j][k].g,i,j,k);     //west
+    if(destreach==true) return;
+
+    sucessor(1,i,j,k+1,matrix[i][j][k].g,i,j,k);     //top
+    if(destreach==true) return;
+    sucessor(1,i,j,k-1,matrix[i][j][k].g,i,j,k);     //bottom
+    if(destreach==true) return;
   }
 }
 
@@ -257,15 +299,17 @@ void sucessor(int state,int i,int j,int k,float cost,int ii,int jj,int kk)
      }
      else if(closedList[i][j][k]==false && access(matrix[i][j][k])==true)
      {
-       if(state%2==0)
+       if(state==1)
        g=cost+1;
-       else
+       else if(state==2)
        g=cost+sqrt(2);
+       else
+       g=cost+sqrt(3);
 
        h=heuristic(i,j,k,des);
        f=g+h;
 
-       if(matrix[i][j].f==FLT_MAX||matrix[i][j].f>f)
+       if(matrix[i][j][k].f==FLT_MAX||matrix[i][j][k].f>f)
        {
          openList.insert(make_pair(f,make_pair(i,j)));
          matrix[i][j][k].f=f;
@@ -294,7 +338,6 @@ void tracePath(int i,int j,int k)
   return;
   else
   tracePath(matrix[i][j][k].parent.first.first,matrix[i][j][k].parent.first.second,matrix[i][j][k].parent.second);
-
 }
 
 void minkowski(int i,int j,int k)
