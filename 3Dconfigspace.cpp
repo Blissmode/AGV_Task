@@ -6,12 +6,12 @@ using namespace cv;
 
 #define fpair pair<float,pair< pair<int,int>,int> >
 #define triplet pair< pair<int,int>,int>
-#define make_pair3(a,b,c) make_pair(make_pair(int,int),int)
+#define make_pair3(a,b,c) make_pair(make_pair(a,b),c)
 
 #define width 10
 #define breadth 20
 
-int rotState=10;
+int rotState=36;
 int rotateby=360/rotState;
 
 
@@ -26,6 +26,8 @@ struct vertex
 
 Mat img=imread("task.png",1);
 Mat imgt=imread("task.png",1);
+Mat imgRotateTemp;
+
 triplet src,des;
 multiset <fpair > openList;
 
@@ -35,10 +37,10 @@ bool isValid(triplet);
 bool access(vertex);
 float heuristic(int,int,int,triplet);
 void AStarSearch();
-void sucessor(int,int,int,float,int,int);
-void tracePath(int,int);
+void sucessor(int,int,int,int,float,int,int,int);
+void tracePath(int,int,int);
 void minkowski(int,int,int);
-void makebot(int,int);
+void makebot(int,int,int);
 
 int ismax=0,ismin=INT_MAX,idmax=0,idmin=INT_MAX;
 int jsmax=0,jsmin=INT_MAX,jdmax=0,jdmin=INT_MAX;
@@ -46,11 +48,27 @@ bool destreach=false;
 
 
 vector< vector<vector<vertex> > > matrix(1000,vector<vector<vertex> >(1000, vector<vertex>(rotState)));
-vector< vector<bool> > closedList(1000,vector<vector<bool> >(1000, vector<vertex>(rotState,false)));
+//vector< vector<bool> > closedList(1000,vector<vector<bool> >(1000, vector<bool>(rotState)));
+bool closedList[1000][1000][50];
 
-void DrawRotatedRectangle(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
+void DrawRectangleWhite(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
 {
     cv::Scalar color = cv::Scalar(255.0, 255.0, 255.0);
+    cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
+    cv::Point2f vertices2f[4];
+    rotatedRectangle.points(vertices2f);
+    cv::Point vertices[4];
+    for(int i = 0; i < 4; ++i)
+    {
+        vertices[i] = vertices2f[i];
+    }
+    cv::fillConvexPoly(image,vertices,4,color);
+}
+
+
+void DrawRectangleBlue(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
+{
+    cv::Scalar color = cv::Scalar(255.0,0,0);
     cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
     cv::Point2f vertices2f[4];
     rotatedRectangle.points(vertices2f);
@@ -75,7 +93,7 @@ int main(int argc,char** argv)
     for(int j=0;j<cols;j++)
     {
       matrix[i][j][0].f=matrix[i][j][0].g=matrix[i][j][0].h=FLT_MAX;
-      matrix[i][j].parent.first.first=matrix[i][j].parent.first.second=-1;
+      matrix[i][j][0].parent.first.first=matrix[i][j][0].parent.first.second=-1;
 
       Vec3b store=img.at<Vec3b>(i,j);
       if(store[0]==0 && store[1]==0 && store[2]==0)
@@ -125,24 +143,83 @@ int main(int argc,char** argv)
      }
    }
 
+ imshow("Before Minkowski",img);
 
    src=make_pair3((ismax+ismin)/2,(jsmax+jsmin)/2,0);
    des=make_pair3((idmax+idmin)/2,(jdmax+jdmin)/2,0);
 
    printf("Source        :(%d,%d)\n",src.first.first,src.first.second);
    printf("Destination   :(%d,%d)\n",des.first.first,des.first.second);
+   cout<<"Angles To turn:"<<rotState<<endl;
+
+
+for(int k=0;k<rotState;k++)                           //3D-CONFIGURATION SPACE GENERATED
+{
+   imgRotateTemp=imread("task.png");
 
    for(int i=0;i<rows;i++)
    {
      for(int j=0;j<cols;j++)
      {
-       if(matrix[i][j].orgstate==-1)
+       if(matrix[i][j][k].state==-1)
        {
-         for(int k=0;k<rotState;k++)
-         minkowski(i,j,k);
+         minkowski(j,i,k*rotateby);
        }
      }
+  /*  imshow("Terribly Intermediate minkowski",imgRotateTemp);
+     waitKey(0);*/
    }
+
+  //imshow("Intermediate minkowski",imgRotateTemp);
+   cout<<"calculating layer "<<k<<endl;
+  // waitKey(0);
+
+   for(int i=0;i<rows;i++)
+   {
+     for(int j=0;j<cols;j++)
+     {
+       matrix[i][j][k].f=matrix[i][j][k].g=matrix[i][j][k].h=FLT_MAX;
+       matrix[i][j][k].parent.first.first=matrix[i][j][k].parent.first.second=-1;
+
+       Vec3b store=imgRotateTemp.at<Vec3b>(i,j);
+
+       if(store[0]==0 && store[1]==0 && store[2]==0)
+       {
+       matrix[i][j][k].state=1;
+       matrix[i][j][k].orgstate=1;
+       }
+       else if(store[0]==0 && store[1]>0 && store[2]==0)
+       {
+         matrix[i][j][k].state=4;
+         matrix[i][j][k].orgstate=4;
+         if(i>idmax)idmax=i;
+         if(i<idmin)idmin=i;
+         if(j>jdmax)jdmax=j;
+         if(j<jdmin)jdmin=j;
+       }
+       else if(store[0]==0 && store[1]==0 && store[2]>0)
+       {
+         matrix[i][j][k].state=0;
+         matrix[i][j][k].orgstate=0;
+         if(i>ismax)ismax=i;
+         if(i<ismin)ismin=i;
+         if(j>jsmax)jsmax=j;
+         if(j<jsmin)jsmin=j;
+       }
+       else if(store[0]>0 && store[1]>0 && store[2]>0)
+       {
+       matrix[i][j][k].state=-1;
+       matrix[i][j][k].orgstate=-1;
+       }
+       else
+       {
+       matrix[i][j][k].state=1;
+       matrix[i][j][k].orgstate=1;
+      }
+     }
+   }
+
+}
 
    AStarSearch();
 
@@ -168,10 +245,9 @@ int main(int argc,char** argv)
 
 
 
-
 bool isValid (triplet a)
 {
-  return((a.firts.first>=0 && a.first.first<rows) && (a.first.second>=0 && a.first.second<cols)  && (a.second>=0 && a.second<rotState));
+  return((a.first.first>=0 && a.first.first<rows) && (a.first.second>=0 && a.first.second<cols)  && (a.second>=0 && a.second<rotState));
 }
 
 bool access(vertex a)
@@ -203,8 +279,9 @@ void AStarSearch()
   matrix[i][j][k].f=0.0;
   matrix[i][j][k].g=0.0;
   matrix[i][j][k].h=0.0;
-  matrix[i][j][k].parent.first=i;
-  matrix[i][j][k].parent.second=j;
+  matrix[i][j][k].parent.first.first=i;
+  matrix[i][j][k].parent.first.second=j;
+  matrix[i][j][k].parent.second=k;
 
   openList.insert(make_pair(0.0,matrix[i][j][k].parent));
 
@@ -215,7 +292,6 @@ void AStarSearch()
     i=p.second.first.first;
     j=p.second.first.second;
     k=p.second.second;
-//    printf("Current node f  :(%d,%d)\n",i,j);
     closedList[i][j][k]=true;
 
     sucessor(2,i-1,j-1,k,matrix[i][j][k].g,i,j,k);    //north-west
@@ -283,7 +359,8 @@ void AStarSearch()
 
 void sucessor(int state,int i,int j,int k,float cost,int ii,int jj,int kk)
 {
-  float g,h,f;
+   float g,h,f;
+
    if(isValid(make_pair3(i,j,k))==true)
    {
 
@@ -311,7 +388,7 @@ void sucessor(int state,int i,int j,int k,float cost,int ii,int jj,int kk)
 
        if(matrix[i][j][k].f==FLT_MAX||matrix[i][j][k].f>f)
        {
-         openList.insert(make_pair(f,make_pair(i,j)));
+         openList.insert(make_pair(f,make_pair3(i,j,k)));
          matrix[i][j][k].f=f;
          matrix[i][j][k].g=g;
          matrix[i][j][k].h=h;
@@ -328,8 +405,8 @@ void tracePath(int i,int j,int k)
 {
   printf("Current node  :(%d,%d,%d)\n",i,j,k);
   img.at<Vec3b>(i,j)[0]=255;
-  triplet t=make_pair(i,j,k);
-  makebot(i,j,k);
+  triplet t=make_pair3(i,j,k);
+  makebot(j,i,k*rotateby);
   if(t==matrix[i][j][k].parent)
   {
     return;
@@ -342,49 +419,20 @@ void tracePath(int i,int j,int k)
 
 void minkowski(int i,int j,int k)
 {
-int imax=i+width;
-int jmax=j-breadth;
-int jtemp=j;
-
-  for(;i<=imax;i++)
-  {
-    for(j=jtemp;j>jmax;j--)
-    {
-      if(isValid(make_pair(i,j)))
-      {
-        matrix[i][j].state=-1;
-        imgt.at<Vec3b>(i,j)[0]=255;
-        imgt.at<Vec3b>(i,j)[1]=255;
-        imgt.at<Vec3b>(i,j)[2]=255;
-      }
-      else
-      continue;
-    }
-  }
+  Point t;
+  t.x=i;
+  t.y=j;
+  DrawRectangleWhite(imgRotateTemp,t,Size(width,breadth),k);
 }
 
 void makebot(int i, int j,int k)
 {
-  int imax=i-width;
-  int jmax=j+breadth;
-  int jtemp=j;
-  Mat temp=imread("task.png",1);
+    Mat temp=imread("task.png",1);
+  Point t;
+  t.x=i;
+  t.y=j;
 
-
-  for(;i>imax;i--)
-  {
-    for(j=jtemp;j<jmax;j++)
-    {
-      if(isValid(make_pair(i,j)))
-      {
-        temp.at<Vec3b>(i,j)[0]=255;
-        temp.at<Vec3b>(i,j)[1]=0;
-        temp.at<Vec3b>(i,j)[2]=0;
-      }
-      else
-      continue;
-    }
-  }
+  DrawRectangleBlue(temp,t,Size(width,breadth),k);
     waitKey(30);
   imshow("In Transition:",temp);
 }
