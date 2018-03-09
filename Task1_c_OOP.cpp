@@ -11,6 +11,11 @@ using namespace cv;
 #define width 10
 #define breadth 20
 
+Mat img;
+Mat imgRotateTemp;
+Mat imgt;
+
+
 struct vertex
 {
   int state;
@@ -29,8 +34,7 @@ class PathPlanner
     Mat img;
     multiset <fpair > openList;
     vector< vector<vector<vertex> > > matrix;
-    //vector< vector<bool> > closedList(1000,vector<vector<bool> >(1000, vector<bool>(rotState)));
-    bool closedList[1000][1000][50];
+    vector< vector <vector<bool> > > closedList;
     bool isDestination(vertex);
     bool isValid(triplet);
     bool access(vertex);
@@ -48,16 +52,13 @@ class PathPlanner
     void tracePath(int,int);
     void displayImage();
     void AStarSearch();
-    void CreateMinkowski();
+    //void CreateMinkowski();
 };
 
 void PathPlanner::displayImage()
 {
   imshow("Final Image",img);
 }
-
-
-Mat imgt=imread("task.png",1);
 
 PathPlanner::PathPlanner(Mat A,int x,int y)
 {
@@ -67,46 +68,21 @@ PathPlanner::PathPlanner(Mat A,int x,int y)
   destreach=false;
   rows=x;
   cols=y;
-  matrix.resize(1000,vector<vector<vertex> >(1000, vector<vertex>(rotState)));
-}
-
-Mat img;
-Mat imgRotateTemp;
-
-
-
-void PathPlanner::DrawRectangleWhite(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
-{
-    cv::Scalar color = cv::Scalar(255.0, 255.0, 255.0);
-    cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
-    cv::Point2f vertices2f[4];
-    rotatedRectangle.points(vertices2f);
-    cv::Point vertices[4];
-    for(int i = 0; i < 4; ++i)
-    {
-        vertices[i] = vertices2f[i];
-    }
-    cv::fillConvexPoly(image,vertices,4,color);
+  matrix.resize(1001,vector<vector<vertex> >(1001, vector<vertex>(rotState)));
+  closedList.resize(1001,vector<vector<bool> >(1001, vector<bool>(rotState)));
 }
 
 
-void PathPlanner::DrawRectangleBlue(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
-{
-    cv::Scalar color = cv::Scalar(255.0,0,0);
-    cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
-    cv::Point2f vertices2f[4];
-    rotatedRectangle.points(vertices2f);
-    cv::Point vertices[4];
-    for(int i = 0; i < 4; ++i)
-    {
-        vertices[i] = vertices2f[i];
-    }
-    cv::fillConvexPoly(image,vertices,4,color);
-}
 
-int main(int argc,char** argv)
+
+
+
+
+int main()
 {
    img=imread("task.png",1);
+//   imgRotateTemp=imread("task.png",1);
+//   imgt=imread("task.png",1);
    PathPlanner Path(img,img.rows,img.cols);
    Path.initialize();
    Path.AStarSearch();
@@ -129,6 +105,8 @@ void PathPlanner::initialize()
   int ismax=0,ismin=INT_MAX,idmax=0,idmin=INT_MAX;
   int jsmax=0,jsmin=INT_MAX,jdmax=0,jdmin=INT_MAX;
 
+  // matrix[0][0][0].f=FLT_MAX;
+  // cout<<matrix[0][0][0].f<<endl;
   cout<<"ROWS      :    "<<rows<<endl;
   cout<<"COLOUMNS  :    "<<cols<<endl;
 
@@ -136,6 +114,7 @@ void PathPlanner::initialize()
   {
     for(int j=0;j<cols;j++)
     {
+
       matrix[i][j][0].f=matrix[i][j][0].g=matrix[i][j][0].h=FLT_MAX;
       matrix[i][j][0].parent.first.first=matrix[i][j][0].parent.first.second=-1;
 
@@ -187,7 +166,6 @@ void PathPlanner::initialize()
      }
    }
 
- imshow("Before Minkowski",img);
 
    src=make_pair3((ismax+ismin)/2,(jsmax+jsmin)/2,0);
    des=make_pair3((idmax+idmin)/2,(jdmax+jdmin)/2,0);
@@ -267,6 +245,36 @@ for(int k=0;k<rotState;k++)                           //3D-CONFIGURATION SPACE G
 }
 
 
+
+
+void PathPlanner::DrawRectangleBlue(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
+{
+    cv::Scalar color = cv::Scalar(255.0,0,0);
+    cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
+    cv::Point2f vertices2f[4];
+    rotatedRectangle.points(vertices2f);
+    cv::Point vertices[4];
+    for(int i = 0; i < 4; ++i)
+    {
+        vertices[i] = vertices2f[i];
+    }
+    cv::fillConvexPoly(image,vertices,4,color);
+}
+
+
+void PathPlanner::DrawRectangleWhite(cv::Mat& image, cv::Point centerPoint, cv::Size rectangleSize, int rotationDegrees)
+{
+    cv::Scalar color = cv::Scalar(255.0, 255.0, 255.0);
+    cv::RotatedRect rotatedRectangle(centerPoint, rectangleSize, rotationDegrees);
+    cv::Point2f vertices2f[4];
+    rotatedRectangle.points(vertices2f);
+    cv::Point vertices[4];
+    for(int i = 0; i < 4; ++i)
+    {
+        vertices[i] = vertices2f[i];
+    }
+    cv::fillConvexPoly(image,vertices,4,color);
+}
 
 
 
@@ -453,7 +461,7 @@ void PathPlanner::minkowski(int i,int j,int k)
 
 void PathPlanner::makebot(int i, int j,int k)
 {
-    Mat temp=imread("task.png",1);
+  Mat temp=imread("task.png",1);
   Point t;
   t.x=i;
   t.y=j;
